@@ -1,0 +1,88 @@
+generator client {
+    provider   = "prisma-client-js"
+    engineType = "library"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model Admin {
+    id           String          @id @default(cuid())
+    name         String
+    email        String          @unique
+    password     String          // Hashed password
+    role         String          @default("SUPER_ADMIN") // SUPER_ADMIN, ADMIN, etc.
+    isOnline     Boolean         @default(false)         // Online/Offline status (true = online, false = offline)
+    isActive     Boolean         @default(true)          // Account active status (true = allowed to login)
+    lastLoginAt  DateTime?       // Timestamp of the most recent login
+    lastLogoutAt DateTime?       // Timestamp of the most recent logout
+    loginLogs    AdminLoginLog[] // Complete history of logins and logouts
+    createdAt    DateTime        @default(now())
+    updatedAt    DateTime        @updatedAt
+}
+
+model AdminLoginLog {
+    id        String    @id @default(cuid())
+    adminId   String
+    admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+    loginAt   DateTime  @default(now()) // When admin logged in
+    logoutAt  DateTime? // When admin logged out
+    ipAddress String?
+    userAgent String?
+    status    String    @default("ACTIVE") // ACTIVE, LOGGED_OUT, EXPIRED
+    createdAt DateTime  @default(now())
+
+    @@index([adminId])
+}
+
+model Product {
+    id          String           @id @default(cuid())
+    name        String
+    sku         String           @unique
+    barcode     String?
+    category    String           @default("General") // e.g. Men, Women, Kids, Accessories
+    price       Decimal          @default(0.0) // Base / starting price
+    costPrice   Decimal          @default(0.0) // Base cost price
+    size        String?          // Summary of sizes e.g. "S, M, L, XL"
+    color       String?          // Summary of colors e.g. "Black, Blue"
+    stock       Int              @default(0) // Total stock across all variants
+    isActive    Boolean          @default(true) // Active status key
+    variants    ProductVariant[]
+    createdAt   DateTime         @default(now())
+    updatedAt   DateTime         @updatedAt
+}
+
+model ProductVariant {
+    id          String   @id @default(cuid())
+    productId   String
+    product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    sku         String   @unique
+    barcode     String?
+    size        String   // e.g. "M", "L", "XL", "32"
+    color       String   // e.g. "Black", "Blue", "White"
+    price       Decimal  // Specific price for this combo (e.g. Black = 45, Blue = 35)
+    costPrice   Decimal  @default(0.0)
+    stock       Int      @default(0) // Stock for this specific size + color combo
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@index([productId])
+}
+
+model Coupon {
+    id            String    @id @default(cuid())
+    code          String    @unique
+    description   String?
+    discountType  String    @default("PERCENTAGE") // PERCENTAGE or FIXED
+    discountValue Decimal   @default(10.0)
+    minOrderAmount Decimal? @default(0.0)
+    startDate     DateTime  @default(now())
+    endDate       DateTime  // Expiration date
+    usageLimit    Int       @default(100) // Max total times this coupon can be used
+    usedCount     Int       @default(0)   // How many times this coupon has been used
+    isActive      Boolean   @default(true) // Active status key
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+}
