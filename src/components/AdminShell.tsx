@@ -13,7 +13,6 @@ import {
   ClipboardList,
   Menu,
   X,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -176,19 +175,6 @@ export default function AdminShell({ admin, children }: AdminShellProps) {
               </Link>
             );
           })}
-
-          <div className="pt-3 mt-3 border-t border-slate-100">
-            <Link
-              href="/"
-              className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all ${
-                desktopCollapsed ? "justify-center px-0" : ""
-              }`}
-              title="Storefront Portal"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              {!desktopCollapsed && <span>Storefront Portal</span>}
-            </Link>
-          </div>
         </div>
 
         {/* Desktop Bottom Profile & Logout */}
@@ -331,17 +317,6 @@ export default function AdminShell({ admin, children }: AdminShellProps) {
               </Link>
             );
           })}
-
-          <div className="pt-4 mt-4 border-t border-slate-100">
-            <Link
-              href="/"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-              <span>Storefront Portal</span>
-            </Link>
-          </div>
         </div>
 
         {/* Mobile Bottom Profile & Logout */}

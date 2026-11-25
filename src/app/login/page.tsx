@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Mail,
@@ -11,7 +10,6 @@ import {
   ShieldCheck,
   ShoppingBag,
   ArrowRight,
-  ArrowLeft,
   Loader2,
   AlertCircle,
   CheckCircle2,
@@ -61,17 +59,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-[100dvh] w-full flex items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-100/60 text-slate-800 p-3.5 xs:p-4 sm:p-6 font-sans">
       <div className="w-full max-w-md">
-        {/* Navigation back to store */}
-        <div className="mb-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Storefront</span>
-          </Link>
-        </div>
-
         {/* Brand Header */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-600 text-white mb-3 sm:mb-4 shadow-lg shadow-indigo-200">
