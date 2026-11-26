@@ -12,6 +12,8 @@ import {
   Loader2,
   ClipboardList,
   Menu,
+  ScanLine,
+  Receipt,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -48,6 +50,16 @@ export default function AdminSidebar({ admin }: AdminSidebarProps) {
       label: "Dashboard",
       href: "/admin/dashboard",
       icon: LayoutDashboard,
+    },
+    {
+      label: "POS Billing",
+      href: "/admin/pos",
+      icon: ScanLine,
+    },
+    {
+      label: "Sales & Invoices",
+      href: "/admin/orders",
+      icon: Receipt,
     },
     {
       label: "Products",

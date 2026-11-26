@@ -11,6 +11,8 @@ import {
   Layers,
   CheckCircle2,
   Tag,
+  ScanLine,
+  Receipt,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -77,25 +79,25 @@ export default async function AdminDashboardPage() {
 
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           <Link
+            href="/admin/pos"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs sm:text-sm font-bold shadow-md shadow-indigo-100 transition"
+          >
+            <ScanLine className="w-4 h-4 shrink-0" />
+            <span>Launch POS Billing</span>
+          </Link>
+          <Link
+            href="/admin/orders"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold transition"
+          >
+            <Receipt className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span>Sales History</span>
+          </Link>
+          <Link
             href="/admin/products"
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition"
           >
-            <Plus className="w-4 h-4 shrink-0" />
-            <span>Manage Products</span>
-          </Link>
-          <Link
-            href="/admin/coupons"
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold transition"
-          >
-            <TicketPercent className="w-4 h-4 text-indigo-600 shrink-0" />
-            <span>Coupons</span>
-          </Link>
-          <Link
-            href="/admin/logs"
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs sm:text-sm font-semibold transition"
-          >
-            <Shield className="w-4 h-4 text-slate-600 shrink-0" />
-            <span>Admin Logs</span>
+            <Plus className="w-4 h-4 shrink-0 text-slate-500" />
+            <span>Products</span>
           </Link>
         </div>
       </div>

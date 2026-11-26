@@ -15,6 +15,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ScanLine,
+  Receipt,
 } from "lucide-react";
 
 interface AdminShellProps {
@@ -82,6 +84,16 @@ export default function AdminShell({ admin, children }: AdminShellProps) {
       icon: LayoutDashboard,
     },
     {
+      label: "POS Billing",
+      href: "/admin/pos",
+      icon: ScanLine,
+    },
+    {
+      label: "Sales & Invoices",
+      href: "/admin/orders",
+      icon: Receipt,
+    },
+    {
       label: "Products",
       href: "/admin/products",
       icon: Shirt,
@@ -108,8 +120,12 @@ export default function AdminShell({ admin, children }: AdminShellProps) {
           desktopCollapsed ? "w-20" : "w-64"
         }`}
       >
-        {/* Top Brand Header with Menu Icon */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
+        {/* Top Brand Header */}
+        <div
+          className={`h-16 flex items-center border-b border-slate-100 shrink-0 ${
+            desktopCollapsed ? "justify-center px-2" : "px-4"
+          }`}
+        >
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/admin/dashboard"
@@ -129,16 +145,6 @@ export default function AdminShell({ admin, children }: AdminShellProps) {
               </div>
             )}
           </div>
-
-          {/* Menu icon button inside the sidebar to open/close or collapse it */}
-          <button
-            onClick={() => setDesktopCollapsed(!desktopCollapsed)}
-            className="p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 active:bg-indigo-100 transition cursor-pointer flex items-center justify-center"
-            title={desktopCollapsed ? "Expand sidebar" : "Collapse / Close sidebar"}
-            aria-label="Toggle sidebar menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Navigation items */}
@@ -261,7 +267,7 @@ export default function AdminShell({ admin, children }: AdminShellProps) {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Mobile Drawer Header with Menu toggle icon */}
+        {/* Mobile Drawer Header with Close (X) icon */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-100 shrink-0">
@@ -275,14 +281,14 @@ export default function AdminShell({ admin, children }: AdminShellProps) {
             </div>
           </div>
 
-          {/* Menu icon button inside mobile sidebar to close it */}
+          {/* Close (X) icon button inside mobile drawer */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 active:bg-indigo-100 transition cursor-pointer flex items-center justify-center"
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 transition cursor-pointer flex items-center justify-center"
             aria-label="Close sidebar menu"
             title="Close sidebar"
           >
-            <Menu className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
