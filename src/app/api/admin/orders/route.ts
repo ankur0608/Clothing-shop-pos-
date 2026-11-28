@@ -14,7 +14,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search")?.trim() || "";
     const paymentMethod = searchParams.get("paymentMethod") || "";
-    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10));
+    const skip = (page - 1) * limit;
 
     const where: any = {};
     if (paymentMethod) {
@@ -29,23 +31,49 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      const orders = await (prisma as any).order.findMany({
-        where,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          items: true,
-          admin: {
-            select: { name: true, email: true },
+      const [totalCount, orders] = await Promise.all([
+        (prisma as any).order.count({ where }),
+        (prisma as any).order.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+          include: {
+            items: true,
+            admin: {
+              select: { name: true, email: true },
+            },
           },
+        }),
+      ]);
+
+      const totalPages = Math.ceil(totalCount / limit) || 1;
+
+      return NextResponse.json({
+        orders,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
         },
       });
-
-      return NextResponse.json({ orders });
     } catch (dbErr: any) {
       // If table doesn't exist yet before db push
       console.warn("Orders table query error (run prisma db push):", dbErr.message);
-      return NextResponse.json({ orders: [] });
+      return NextResponse.json({
+        orders: [],
+        pagination: {
+          page: 1,
+          limit,
+          totalCount: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      });
     }
   } catch (error: any) {
     console.error("Orders fetch error:", error);

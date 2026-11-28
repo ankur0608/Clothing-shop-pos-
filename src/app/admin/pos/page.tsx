@@ -27,6 +27,12 @@ import {
   Receipt,
   Layers,
   Percent,
+  Smartphone,
+  ExternalLink,
+  Copy,
+  Check,
+  Radio,
+  Wifi,
 } from "lucide-react";
 import { playScannerBeep } from "@/lib/sound";
 import BarcodeScannerModal from "@/components/BarcodeScannerModal";
@@ -81,6 +87,13 @@ export default function AdminPOSPage() {
   const [labelProduct, setLabelProduct] = useState<any | null>(null);
   const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
 
+  // Wireless Mobile Scanner Pairing State
+  const [posSessionId, setPosSessionId] = useState<string>("");
+  const [isMobilePairModalOpen, setIsMobilePairModalOpen] = useState(false);
+  const [mobileSyncCount, setMobileSyncCount] = useState<number>(0);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const lastSyncTimeRef = useRef<number>(Date.now());
+
   // Catalog Quick Browse
   const [catalogProducts, setCatalogProducts] = useState<any[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -91,6 +104,44 @@ export default function AdminPOSPage() {
   const [variantPickerProduct, setVariantPickerProduct] = useState<any | null>(null);
 
   const barcodeInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Initialize session ID for mobile wireless scanner
+  useEffect(() => {
+    const existing = localStorage.getItem("pos_terminal_session");
+    if (existing) {
+      setPosSessionId(existing);
+    } else {
+      const generated = `pos_${Math.random().toString(36).slice(2, 8)}`;
+      localStorage.setItem("pos_terminal_session", generated);
+      setPosSessionId(generated);
+    }
+  }, []);
+
+  // Poll for incoming wireless scans from paired mobile phone
+  useEffect(() => {
+    if (!posSessionId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `/api/admin/pos/sync?sessionId=${encodeURIComponent(posSessionId)}&since=${lastSyncTimeRef.current}`
+        );
+        const data = await res.json();
+
+        if (data.success && Array.isArray(data.scans) && data.scans.length > 0) {
+          lastSyncTimeRef.current = data.serverTime || Date.now();
+          for (const scan of data.scans) {
+            handleLookupAndAddToCart(scan.barcode, true);
+          }
+          setMobileSyncCount((prev) => prev + data.scans.length);
+        }
+      } catch (err) {
+        // silent polling error catch
+      }
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, [posSessionId]);
 
   // Auto-focus barcode scanner input on mount & shortcuts
   useEffect(() => {
@@ -181,34 +232,40 @@ export default function AdminPOSPage() {
     setTimeout(() => setScanMessage(null), 3000);
   };
 
-  // Barcode Gun & Text Input Handler
-  const handleBarcodeScan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = barcodeInput.trim();
-    if (!code) return;
+  // Core barcode lookup and auto-add handler (supports both Laptop gun & Mobile wireless scanner)
+  const handleLookupAndAddToCart = async (code: string, fromMobile = false) => {
+    const trimmed = code.trim();
+    if (!trimmed) return;
 
     setScanning(true);
     setScanMessage(null);
 
     try {
-      const res = await fetch(`/api/admin/products/lookup?code=${encodeURIComponent(code)}`);
+      const res = await fetch(`/api/admin/products/lookup?code=${encodeURIComponent(trimmed)}`);
       const data = await res.json();
 
       if (!res.ok || !data.found) {
         playScannerBeep(false);
         setScanMessage({
           type: "error",
-          text: data.error || `Barcode "${code}" not found in inventory`,
+          text: data.error || `Barcode "${trimmed}" not found in inventory`,
         });
         setBarcodeInput("");
         barcodeInputRef.current?.focus();
         return;
       }
 
-      // Found product! Add immediately to cart!
+      // Add product & matched variant to cart
       addToCart(data.product, data.matchedVariant || null);
       setBarcodeInput("");
       barcodeInputRef.current?.focus();
+
+      if (fromMobile) {
+        setScanMessage({
+          type: "success",
+          text: `📱 Scanned from Phone: Added ${data.product.name} ${data.matchedVariant?.size ? `(${data.matchedVariant.size})` : ""} - ₹${Number(data.matchedVariant ? data.matchedVariant.price : data.product.price).toFixed(2)} to bill!`,
+        });
+      }
     } catch (err: any) {
       playScannerBeep(false);
       setScanMessage({
@@ -217,6 +274,14 @@ export default function AdminPOSPage() {
       });
     } finally {
       setScanning(false);
+    }
+  };
+
+  // Barcode Gun & Text Input Handler
+  const handleBarcodeScan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (barcodeInput.trim()) {
+      handleLookupAndAddToCart(barcodeInput.trim(), false);
     }
   };
 
@@ -485,6 +550,26 @@ export default function AdminPOSPage() {
             >
               <Camera className="w-4 h-4" />
               <span className="hidden sm:inline">Camera</span>
+            </button>
+
+            {/* Wireless Mobile Phone Scanner Pairing Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobilePairModalOpen(true)}
+              className={`px-3.5 py-2.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs ${
+                mobileSyncCount > 0
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                  : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+              }`}
+              title="Pair your phone to scan tags wirelessly into this laptop screen"
+            >
+              <Smartphone className="w-4 h-4 text-indigo-600" />
+              <span className="hidden sm:inline">Phone Scanner</span>
+              {mobileSyncCount > 0 ? (
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              ) : (
+                <Wifi className="w-3 h-3 text-indigo-400" />
+              )}
             </button>
           </form>
         </div>
@@ -1080,6 +1165,139 @@ export default function AdminPOSPage() {
         order={completedOrder}
         onStartNewSale={startNewSale}
       />
+
+      {/* Mobile Scanner Wireless Link Modal */}
+      {isMobilePairModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 flex flex-col">
+            <div className="bg-indigo-600 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                  <Smartphone className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base leading-tight">
+                    Pair Mobile Barcode Scanner
+                  </h3>
+                  <p className="text-indigo-100 text-xs">
+                    Scan tags on your mobile → Items pop up on this laptop!
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobilePairModalOpen(false)}
+                className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 text-center">
+              {/* Instructions steps */}
+              <div className="text-left bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 space-y-2 text-xs text-slate-700">
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <span>
+                    Open camera or browser on your mobile phone.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <span>
+                    Open the link below on your phone browser or test it in a tab.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <span>
+                    Point phone camera at any clothing tag — Blue XL / Red M appears on this laptop instantly!
+                  </span>
+                </div>
+              </div>
+
+              {/* Barcode display */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col items-center">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Mobile Scanner Session Tag
+                </p>
+                <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                  <BarcodeRenderer
+                    value={posSessionId}
+                    height={44}
+                    moduleWidth={1.5}
+                    showText={true}
+                  />
+                </div>
+                <span className="text-[11px] text-slate-500 font-mono mt-2">
+                  Session ID: <strong className="text-indigo-600">{posSessionId}</strong>
+                </span>
+              </div>
+
+              {/* URL & Action buttons */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 p-2 bg-slate-100 rounded-xl border border-slate-200 text-xs font-mono text-slate-700 overflow-x-auto">
+                  <span className="truncate flex-1 text-left">
+                    {typeof window !== "undefined"
+                      ? `${window.location.origin}/admin/pos/scan?session=${posSessionId}`
+                      : `/admin/pos/scan?session=${posSessionId}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        const url = `${window.location.origin}/admin/pos/scan?session=${posSessionId}`;
+                        navigator.clipboard.writeText(url);
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2000);
+                      }
+                    }}
+                    className="p-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shrink-0 cursor-pointer"
+                    title="Copy Link"
+                  >
+                    {linkCopied ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/admin/pos/scan?session=${posSessionId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2.5 px-3 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open Scanner in Tab</span>
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsMobilePairModalOpen(false)}
+                    className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-xs text-emerald-700 bg-emerald-50 py-2 rounded-xl border border-emerald-200 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span>Laptop POS is actively listening for mobile scans...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

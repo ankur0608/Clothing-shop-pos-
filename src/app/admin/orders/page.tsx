@@ -15,6 +15,8 @@ import {
   RefreshCw,
   Eye,
   Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import PaymentBillModal, { BillOrderData } from "@/components/PaymentBillModal";
 
@@ -23,20 +25,34 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    totalCount: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
   const [selectedOrder, setSelectedOrder] = useState<BillOrderData | null>(null);
   const [isBillModalOpen, setIsBillModalOpen] = useState(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (targetPage = page) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (paymentFilter) params.set("paymentMethod", paymentFilter);
+      params.set("page", String(targetPage));
+      params.set("limit", "20");
 
       const res = await fetch(`/api/admin/orders?${params.toString()}`);
       const data = await res.json();
       if (res.ok && Array.isArray(data.orders)) {
         setOrders(data.orders);
+        if (data.pagination) {
+          setPagination(data.pagination);
+        }
       }
     } catch (e) {
       console.error("Failed to load orders:", e);
@@ -46,12 +62,19 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    setPage(1);
+    fetchOrders(1);
   }, [paymentFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchOrders();
+    setPage(1);
+    fetchOrders(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchOrders(newPage);
   };
 
   const handleViewBill = (order: any) => {
@@ -95,7 +118,7 @@ export default function AdminOrdersPage() {
     .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="w-full space-y-4 sm:space-y-5">
       {/* Page Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -109,7 +132,7 @@ export default function AdminOrdersPage() {
         </div>
 
         <button
-          onClick={fetchOrders}
+          onClick={() => fetchOrders()}
           className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold shadow-sm transition"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -285,6 +308,53 @@ export default function AdminOrdersPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {pagination.totalPages > 1 && (
+          <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+            <div>
+              Showing{" "}
+              <strong>
+                {Math.min(
+                  (pagination.page - 1) * pagination.limit + 1,
+                  pagination.totalCount
+                )}
+              </strong>{" "}
+              to{" "}
+              <strong>
+                {Math.min(
+                  pagination.page * pagination.limit,
+                  pagination.totalCount
+                )}
+              </strong>{" "}
+              of <strong>{pagination.totalCount}</strong> invoices
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={!pagination.hasPrevPage}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Previous</span>
+              </button>
+
+              <span className="px-3 py-1 font-bold text-slate-800">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={!pagination.hasNextPage}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>

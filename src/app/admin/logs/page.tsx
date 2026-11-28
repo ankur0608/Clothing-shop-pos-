@@ -86,13 +86,13 @@ export default async function AdminLogsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Link
+            {/* <Link
               href="/admin/dashboard"
               className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Dashboard</span>
-            </Link>
+            </Link> */}
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2.5">
             <Shield className="w-6 h-6 text-indigo-600" />

@@ -14,6 +14,8 @@ import {
   Menu,
   ScanLine,
   Receipt,
+  RotateCcw,
+  Barcode,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -62,9 +64,19 @@ export default function AdminSidebar({ admin }: AdminSidebarProps) {
       icon: Receipt,
     },
     {
+      label: "Returns & Exchanges",
+      href: "/admin/returns",
+      icon: RotateCcw,
+    },
+    {
       label: "Products",
       href: "/admin/products",
       icon: Shirt,
+    },
+    {
+      label: "Barcode Labels",
+      href: "/admin/barcodes",
+      icon: Barcode,
     },
     {
       label: "Coupons",
@@ -81,7 +93,7 @@ export default function AdminSidebar({ admin }: AdminSidebarProps) {
   return (
     <aside
       className={`bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 h-screen sticky top-0 z-40 select-none transition-all duration-300 ease-in-out ${
-        collapsed ? "w-20" : "w-64"
+        collapsed ? "w-18" : "w-60"
       }`}
     >
       {/* Top Brand & Nav */}
@@ -89,8 +101,8 @@ export default function AdminSidebar({ admin }: AdminSidebarProps) {
         {/* Brand with Menu Icon */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-100 shrink-0">
-              <ShoppingBag className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-100 shrink-0">
+              <ShoppingBag className="w-4.5 h-4.5" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
@@ -109,14 +121,14 @@ export default function AdminSidebar({ admin }: AdminSidebarProps) {
             title={collapsed ? "Open Sidebar" : "Close Sidebar"}
             aria-label="Toggle Sidebar"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation */}
-        <div className="p-3 space-y-1">
+        <div className="p-3 space-y-1.5">
           {!collapsed && (
-            <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-1">
               Management
             </p>
           )}
@@ -130,7 +142,7 @@ export default function AdminSidebar({ admin }: AdminSidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-[13px] font-medium transition-all ${
                   isActive
                     ? "bg-indigo-50 text-indigo-700 font-semibold shadow-xs"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"

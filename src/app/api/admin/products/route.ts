@@ -47,21 +47,52 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         success: true,
         products: [],
+        pagination: {
+          page: 1,
+          limit: 20,
+          totalCount: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
         fallback: true,
       });
     }
 
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        variants: {
-          orderBy: [{ color: "asc" }, { size: "asc" }],
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const hasPagination = searchParams.has("page") || searchParams.has("limit");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10));
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json({ success: true, products: products || [] });
+    const [totalCount, products] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.findMany({
+        where,
+        ...(hasPagination ? { skip, take: limit } : {}),
+        include: {
+          variants: {
+            orderBy: [{ color: "asc" }, { size: "asc" }],
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const effectiveLimit = hasPagination ? limit : totalCount || 1;
+    const totalPages = Math.ceil(totalCount / effectiveLimit) || 1;
+
+    return NextResponse.json({
+      success: true,
+      products: products || [],
+      pagination: {
+        page,
+        limit: effectiveLimit,
+        totalCount,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error: any) {
     console.error("Fetch Products Error:", error);
     // Return empty fallback array so admin dashboard can render "no products" state cleanly instead of breaking

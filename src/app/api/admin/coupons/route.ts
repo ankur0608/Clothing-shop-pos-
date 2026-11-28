@@ -18,11 +18,35 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const coupons = await prisma.coupon.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const { searchParams } = new URL(req.url);
+    const hasPagination = searchParams.has("page") || searchParams.has("limit");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10));
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json({ success: true, coupons: coupons || [] });
+    const [totalCount, coupons] = await Promise.all([
+      prisma.coupon.count(),
+      prisma.coupon.findMany({
+        ...(hasPagination ? { skip, take: limit } : {}),
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const effectiveLimit = hasPagination ? limit : totalCount || 1;
+    const totalPages = Math.ceil(totalCount / effectiveLimit) || 1;
+
+    return NextResponse.json({
+      success: true,
+      coupons: coupons || [],
+      pagination: {
+        page,
+        limit: effectiveLimit,
+        totalCount,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error: any) {
     console.error("Fetch Coupons Error:", error);
     return NextResponse.json({

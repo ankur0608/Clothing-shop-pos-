@@ -19,6 +19,7 @@ model Admin {
     lastLogoutAt DateTime?       // Timestamp of the most recent logout
     loginLogs    AdminLoginLog[] // Complete history of logins and logouts
     orders       Order[]         // Orders created by this admin
+    returns      Return[]        // Returns handled by this admin
     createdAt    DateTime        @default(now())
     updatedAt    DateTime        @updatedAt
 }
@@ -51,6 +52,7 @@ model Product {
     isActive    Boolean          @default(true) // Active status key
     variants    ProductVariant[]
     orderItems  OrderItem[]
+    returns     Return[]
     createdAt   DateTime         @default(now())
     updatedAt   DateTime         @updatedAt
 }
@@ -68,6 +70,7 @@ model ProductVariant {
     stock       Int         @default(0) // Stock for this specific size + color combo
     isActive    Boolean     @default(true)
     orderItems  OrderItem[]
+    returns     Return[]
     createdAt   DateTime    @default(now())
     updatedAt   DateTime    @updatedAt
 
@@ -109,6 +112,7 @@ model Order {
     adminId        String?
     admin          Admin?      @relation(fields: [adminId], references: [id], onDelete: SetNull)
     items          OrderItem[]
+    returns        Return[]
     createdAt      DateTime    @default(now())
     updatedAt      DateTime    @updatedAt
 
@@ -132,9 +136,43 @@ model OrderItem {
     costPrice   Decimal         @default(0.0)
     quantity    Int             @default(1)
     total       Decimal
+    returns     Return[]
     createdAt   DateTime        @default(now())
 
     @@index([orderId])
     @@index([productId])
     @@index([variantId])
+}
+
+model Return {
+    id            String          @id @default(cuid())
+    returnNumber  String          @unique // e.g. RET-20261128-0001
+    orderId       String
+    order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    orderItemId   String?
+    orderItem     OrderItem?      @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+    productId     String?
+    product       Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+    variantId     String?
+    variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+    productName   String
+    sku           String
+    barcode       String?
+    size          String?
+    color         String?
+    quantity      Int             @default(1)
+    refundAmount  Decimal         @default(0.0)
+    refundMethod  String          @default("CASH") // CASH, UPI, CARD, STORE_CREDIT
+    condition     String          @default("SELLABLE") // SELLABLE, DAMAGED
+    reason        String?
+    adminId       String?
+    admin         Admin?          @relation(fields: [adminId], references: [id], onDelete: SetNull)
+    createdAt     DateTime        @default(now())
+    updatedAt     DateTime        @updatedAt
+
+    @@index([orderId])
+    @@index([orderItemId])
+    @@index([productId])
+    @@index([variantId])
+    @@index([adminId])
 }

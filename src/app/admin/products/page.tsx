@@ -383,7 +383,7 @@ export default function AdminProductsPage() {
       ...prev,
       {
         sku: buildVariantSku(formData.sku, defaultColor, defaultSize) + "-" + (prev.length + 1),
-        barcode: "",
+        barcode: generateRetailBarcode(),
         size: defaultSize,
         color: defaultColor,
         price: formData.price || "0.00",
@@ -418,7 +418,7 @@ export default function AdminProductsPage() {
 
     const newVariant: ProductVariant = {
       sku: buildVariantSku(formData.sku, comboMakerColor, comboMakerSize),
-      barcode: "",
+      barcode: generateRetailBarcode(),
       size: comboMakerSize,
       color: comboMakerColor,
       price,
@@ -953,8 +953,19 @@ export default function AdminProductsPage() {
                                         <td className="px-3 py-2 font-medium text-slate-800">
                                           {v.stock} pcs
                                         </td>
-                                        <td className="px-3 py-2 font-mono text-[11px] text-slate-500">
-                                          {v.sku}
+                                        <td className="px-3 py-2">
+                                          <div className="font-mono text-[11px] text-slate-700 font-semibold">
+                                            {v.sku}
+                                          </div>
+                                          {v.barcode ? (
+                                            <div className="text-[10px] font-mono text-indigo-600 font-bold">
+                                              Tag: {v.barcode}
+                                            </div>
+                                          ) : (
+                                            <div className="text-[10px] text-slate-400 italic">
+                                              No barcode
+                                            </div>
+                                          )}
                                         </td>
                                         <td className="px-3 py-2">
                                           <span
@@ -1460,6 +1471,29 @@ export default function AdminProductsPage() {
 
                   {/* Variants List Table */}
                   <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                    {variants.length > 0 && (
+                      <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <span className="font-semibold text-slate-700">
+                          {variants.length} Combo Variants (Each has unique Price & Barcode)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVariants((prev) =>
+                              prev.map((v) => ({
+                                ...v,
+                                barcode: v.barcode && v.barcode.trim() ? v.barcode : generateRetailBarcode(),
+                              }))
+                            );
+                          }}
+                          className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-white px-2.5 py-1 rounded-lg border border-indigo-200 hover:bg-indigo-50 shadow-xs flex items-center gap-1.5 cursor-pointer transition"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Generate Unique Barcodes for All Combos</span>
+                        </button>
+                      </div>
+                    )}
+
                     {variants.length === 0 ? (
                       <div className="p-8 text-center text-slate-400">
                         <Layers className="w-8 h-8 text-slate-300 mx-auto mb-2" />
@@ -1470,7 +1504,7 @@ export default function AdminProductsPage() {
                       </div>
                     ) : (
                       <div className="overflow-x-auto max-h-72 touch-scroll">
-                        <table className="min-w-[580px] w-full text-left text-xs">
+                        <table className="min-w-[700px] w-full text-left text-xs">
                           <thead className="bg-slate-100 text-slate-600 text-[11px] uppercase font-bold sticky top-0 z-10 border-b border-slate-200">
                             <tr>
                               <th className="px-3 py-2.5">Combo (Color / Size)</th>
@@ -1478,6 +1512,7 @@ export default function AdminProductsPage() {
                               <th className="px-3 py-2.5">Cost (₹)</th>
                               <th className="px-3 py-2.5">Stock</th>
                               <th className="px-3 py-2.5">Variant SKU</th>
+                              <th className="px-3 py-2.5">Combo Barcode</th>
                               <th className="px-3 py-2.5 text-center">Action</th>
                             </tr>
                           </thead>
@@ -1535,7 +1570,7 @@ export default function AdminProductsPage() {
 
                                 {/* Price Input (Different per color/size) */}
                                 <td className="px-3 py-2">
-                                  <div className="relative w-28">
+                                  <div className="relative w-24">
                                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
                                     <input
                                       type="number"
@@ -1551,7 +1586,7 @@ export default function AdminProductsPage() {
 
                                 {/* Cost Price */}
                                 <td className="px-3 py-2">
-                                  <div className="relative w-24">
+                                  <div className="relative w-20">
                                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[11px]">₹</span>
                                     <input
                                       type="number"
@@ -1572,7 +1607,7 @@ export default function AdminProductsPage() {
                                     value={v.stock}
                                     onChange={(e) => updateVariantItem(idx, "stock", e.target.value)}
                                     placeholder="0"
-                                    className="w-20 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600"
+                                    className="w-16 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-600"
                                   />
                                 </td>
 
@@ -1582,8 +1617,30 @@ export default function AdminProductsPage() {
                                     type="text"
                                     value={v.sku}
                                     onChange={(e) => updateVariantItem(idx, "sku", e.target.value.toUpperCase())}
-                                    className="w-36 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[11px] text-slate-700 uppercase focus:bg-white focus:outline-none focus:border-indigo-600"
+                                    className="w-28 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px] text-slate-700 uppercase focus:bg-white focus:outline-none focus:border-indigo-600"
                                   />
+                                </td>
+
+                                {/* Combo Barcode Input + Auto-Gen */}
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="text"
+                                      value={v.barcode || ""}
+                                      onChange={(e) => updateVariantItem(idx, "barcode", e.target.value)}
+                                      placeholder="890..."
+                                      className="w-28 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:bg-white focus:outline-none focus:border-indigo-600"
+                                      title="Unique Barcode for this specific Color + Size combo"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => updateVariantItem(idx, "barcode", generateRetailBarcode())}
+                                      className="px-1.5 py-1 bg-slate-100 hover:bg-indigo-50 text-indigo-700 hover:text-indigo-900 rounded font-bold text-[10px] border border-slate-200 cursor-pointer"
+                                      title="Generate random 12-digit barcode"
+                                    >
+                                      Gen
+                                    </button>
+                                  </div>
                                 </td>
 
                                 {/* Remove combo */}
